@@ -1,9 +1,7 @@
-﻿# CMakeList.txt: CMake-Projekt für "malscan". Schließen Sie die Quelle ein, und definieren Sie
-# projektspezifische Logik hier.
-#
-cmake_minimum_required (VERSION 3.8)
+﻿cmake_minimum_required (VERSION 3.8)
 
-# Fügen Sie der ausführbaren Datei für dieses Projekt eine Quelle hinzu.
-add_executable (malscan "malscan.cpp" "malscan.h")
+link_directories("../libyara")
+include_directories("../libyara/include")
 
-# TODO: Fügen Sie bei Bedarf Tests und Installationsziele hinzu.
+add_executable (malscan "malscan.cpp" "yarapp.cpp")
+target_link_libraries(malscan libyara32)
