@@ -47,13 +47,13 @@ The first, `info`, is a dict like this:
 
 ```JSON
 {
-    'address': 428343296,
-    'matches':
+    "address": 428343296,
+    "matches":
         {
-            '$config_start': (66212, 66233)
+            "$config_start": (66212, 66233)
         },
-    'pid': 5880,
-    'executable': 'devenv.exe'
+    "pid": 5880,
+    "executable": 'devenv.exe'
 }
 ```
 
