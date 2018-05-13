@@ -1,7 +1,8 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-include_directories("C:/Python34/include")
-link_directories("C:/Python34/libs")
+find_package(PythonLibs 3.4 REQUIRED)
 
-add_executable (malscan "malscan.cpp" "utils.cpp")
-target_link_libraries(malscan yarapp Python34)
+include_directories("${PYTHON_INCLUDE_DIRS}")
+
+add_executable (malscan "malscan.cpp" "utils.cpp" "python_plugin.cpp" "memory_scanner.cpp")
+target_link_libraries(malscan yarapp "${PYTHON_LIBRARIES}")
