@@ -45,7 +45,7 @@ malscan will call `on_match()` when a rule matched and pass two arguments.
 
 The first, `info`, is a dict like this:
 
-```JSON
+```
 {
     "address": 428343296,
     "matches":
