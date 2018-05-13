@@ -66,3 +66,40 @@ And the 2nd argument to `on_match()` is `data`, which is the memory chunk itself
 
 With this data, extractor.py can easily decode the configuration as it has the memory chunk, and every location where the blob 0xAA 0xBB 0xCC 0xDD was found.
 
+## Full example
+
+We have a YARA file to locate the configuration:
+
+```
+rule malware_config_matcher
+{
+    meta:
+        plugin = "extractor"
+    strings:
+        $config_start = { AA BB CC DD }
+    condition:
+        all of them
+}
+```
+
+and a script to decrypt it:
+
+```
+# extractor.py
+
+def on_match(info,data):
+    if not "$config_start" in info["matches"]:
+        # should not happen here because it's the only string
+	# but if more strings are in the rule, it may not have produced
+	# a match
+        return
+        
+    for offset in info["matches"]["$config_start"]:
+        #Assuming some fixed size
+        config = data[offset:(offset+CONFIG_SIZE)]
+        
+        #And some function to decrypt that config
+        plain = config_decrypt(config)
+        
+        print("Found config in %s, decrypted config = %s" % (info["executable"],plain))
+```
