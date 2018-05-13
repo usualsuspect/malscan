@@ -84,7 +84,7 @@ rule malware_config_matcher
 
 and a script to decrypt it:
 
-```
+```Python
 # extractor.py
 
 def on_match(info,data):
