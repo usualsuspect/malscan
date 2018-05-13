@@ -17,7 +17,7 @@ rule malware_config_matcher
 {
     meta:
         plugin = "extractor"
-	strings:
+    strings:
         $config_start = { AA BB CC DD }
     condition:
         all of them
