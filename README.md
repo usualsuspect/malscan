@@ -83,7 +83,7 @@ Press any key to continue . . .
 You also MUST have Python 3.4 x86 installed on the system you want to scan on. There's multiple reasons:
 
 * Python 3.6 has no support for Windows XP and malscan is supposed to run on Windows XP, hence 3.4
-* `malscan` does not come with Python because plugins most likely will require additional packages (e.g. for crypto), and embeded Python does not support using of `pip` or the likes to install packages
+* `malscan` does not come with Python because plugins most likely will require additional packages (e.g. for crypto), and embedded Python does not support using of `pip` or the likes to install packages
 
 Therefore, the target system must come with a proper Python distribution itself.
 
