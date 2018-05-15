@@ -119,7 +119,7 @@ int memory_scanner::scan_callback(int message, void *msg_data, void *user_data)
             }
         }
     }
-    return CALLBACK_ABORT;
+    return CALLBACK_CONTINUE;
 }
 
 
@@ -137,19 +137,19 @@ void memory_scanner::scan_process(PROCESSENTRY32& pe)
 
     do
     {
-        if (mbi.State == MEM_COMMIT)
+        if ((mbi.State & MEM_COMMIT))
         {
             /*std::cout << "AllocationBase: " << std::hex << mbi.AllocationBase << std::endl;
             std::cout << "RegionSize    : " << std::hex << mbi.RegionSize << std::endl;
             std::cout << "Base Address  : " << std::hex << mbi.BaseAddress << std::endl;
             */
 
-            auto data = utils::read_memory(process, reinterpret_cast<uintptr_t>(mbi.AllocationBase), mbi.RegionSize);
+            auto data = utils::read_memory(process, reinterpret_cast<uintptr_t>(mbi.BaseAddress), mbi.RegionSize);
             total += data.size();
 
             scan_info si;
             si.pe = pe;
-            si.base_addr = reinterpret_cast<uintptr_t>(mbi.AllocationBase);
+            si.base_addr = reinterpret_cast<uintptr_t>(mbi.BaseAddress);
             si.size = mbi.RegionSize;
             si.data = &data;
 
