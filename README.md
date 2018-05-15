@@ -75,7 +75,7 @@ Press any key to continue . . .
 
 ## Using malscan
 
-`malscan` expects two diretories:
+`malscan` expects two directories:
 
 * `plugins` with \*.py files
 * `rules` with YARA rule files
@@ -109,3 +109,5 @@ The `info` dict passed to `on_match` contains the following information:
 * `matches` contains a list of offsets for every matched YARA identifier
 * `pid` is the process ID
 * `executable` is the process' name
+
+And the 2nd argument, `data` is simply the memory chunk where the rule matched. Offsets in the `matches` dict inside `info` are relative to this chunk.
