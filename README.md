@@ -12,7 +12,7 @@ Suppose we found out that some malware contains a config block starting with the
 
 Using malscan we can write a simple YARA rule:
 
-```
+```YARA
 rule malware_config_matcher
 {
     meta:
@@ -35,7 +35,7 @@ If a match is found, malscan will check if it should call plugin. Above we used 
 
 Malscan will then launch "extractor.py". In order to work as a plugin, it simply has to contain the following function:
 
-```
+```Python
 # extractor.py
 def on_match(info,data):
     ...
@@ -47,13 +47,13 @@ The first, `info`, is a dict like this:
 
 ```
 {
-    'address': 428343296,
-    'matches':
+    "address": 428343296,
+    "matches":
         {
-            '$config_start': (66212, 66233)
+            "$config_start": (66212, 66233)
         },
-    'pid': 5880,
-    'executable': 'devenv.exe'
+    "pid": 5880,
+    "executable": 'devenv.exe'
 }
 ```
 
@@ -70,7 +70,7 @@ With this data, extractor.py can easily decode the configuration as it has the m
 
 We have a YARA file to locate the configuration:
 
-```
+```YARA
 rule malware_config_matcher
 {
     meta:
@@ -84,7 +84,7 @@ rule malware_config_matcher
 
 and a script to decrypt it:
 
-```
+```Python
 # extractor.py
 
 def on_match(info,data):
