@@ -1,49 +1,97 @@
 # malscan
 
-malscan is a simple tool gluing YARA rules to Python scripts.
+malscan is a tool to scan process memory for YARA matches and execute Python scripts if a match is found.
 
-You write YARA rules to find whatever you want and scan the process memory with it. If a rule matches, it launches a Python script as specified in the rule file with information on where the match is.
+This is useful for extracting configurations from malware process memory for example.
 
-Suppose you analyzed a malware and know how to locate its configuration block. You write a YARA rule to find the block, and a Python script to derypt it. malscan then scans the process memory for matches and runs your script on memory chunks that procuded a match.
+## Real world example
 
-## Usage example
+We want to extract PoisonIvy configurations. From reverse engineering, we know that the configuration blob starts with "\x08\x00StubPath" in memory inside a PoisonIvy process.
 
-Suppose we found out that some malware contains a config block starting with the bytes 0xAA 0xBB 0xCC 0xDD when in memory. The configuration is encrypted though.
-
-Using malscan we can write a simple YARA rule:
+So we write a YARA rule to detect configurations:
 
 ```YARA
-rule malware_config_matcher
+rule pi_config
 {
     meta:
-        plugin = "extractor"
+        plugin = "pi_config_extract"
     strings:
-        $config_start = { AA BB CC DD }
+        $config_start = "\x08\x00StubPath"
     condition:
         all of them
 }
 ```
 
-We then run malscan on an infected system, it scans all process memory for matches to this signature.
+In the meta information, we tell `malscan` what plugin to run if this rule matches.
 
-If a match is found, malscan will check if it should call plugin. Above we used YARA's meta information to define a plugin to be called on a match:
-
-```
-    meta:
-        plugin = "extractor"
-```
-
-Malscan will then launch "extractor.py". In order to work as a plugin, it simply has to contain the following function:
+The plugin is quite simple:
 
 ```Python
-# extractor.py
+import io
+import struct
+
+def word(fh):
+    return struct.unpack("<H",fh.read(2))[0]
+
 def on_match(info,data):
-    ...
+    print("Found PoisonIvy config in %s" % info["executable"])
+    for off in info["matches"]["$config_start"]:
+        off -= 2
+
+        fh = io.BytesIO(data[off:])
+
+        while True:
+            coff = word(fh)
+            if coff == 0:
+                break
+            size = word(fh)
+            cdata = fh.read(size)
+
+            print("    %03x %04d %s" % (coff,size,repr(cdata)))
 ```
 
-malscan will call `on_match()` when a rule matched and pass two arguments.
+`malscan` will call `on_match()` when the rule above matched. It passes some meta information (see below) and the memory chunk itself where the rule matched.
 
-The first, `info`, is a dict like this:
+Our script then simply parses the PoisonIvy configuration blob using that information.
+
+Example output:
+
+```
+C:\Documents and Settings\user\Desktop\malscan>malscan.exe
+Loading plugin pi_config_extract
+Loading rule rules\pi_config.yara
+Found PoisonIvy config in poison.exe
+    40f 0008 b'StubPath'
+    418 0040 b'SOFTWARE\\Classes\\http\\shell\\open\\command'
+    456 0053 b'Software\\Microsoft\\Active Setup\\Installed Components\\'
+    afa 0007 b'testing'
+    190 0016 b'\x0c192.168.56.1\x00\x84\r'
+    18c 0004 b'\x00\x00\x00\x00'
+    2c1 0004 b'\xff\xff\xff\xff'
+    145 0005 b'admin'
+    3fb 0009 b')!VoqA.I4'
+Press any key to continue . . .
+```
+
+## Using malscan
+
+`malscan` expects two diretories:
+
+* `plugins` with \*.py files
+* `rules` with YARA rule files
+
+You also MUST have Python 3.4 x86 installed on the system you want to scan on. There's multiple reasons:
+
+* Python 3.6 has no support for Windows XP and malscan is supposed to run on Windows XP, hence 3.4
+* `malscan` does not come with Python because plugins most likely will require additional packages (e.g. for crypto), and embeded Python does not support using of `pip` or the likes to install packages
+
+Therefore, the target system must come with a proper Python distribution itself.
+
+Other than that nothing else is required. `malscan` should run on everything from XP to Win10 as long as Python 3.4 x86 is installed.
+
+## Details
+
+The `info` dict passed to `on_match` contains the following information:
 
 ```
 {
@@ -53,53 +101,11 @@ The first, `info`, is a dict like this:
             "$config_start": (66212, 66233)
         },
     "pid": 5880,
-    "executable": 'devenv.exe'
+    "executable": 'pi.exe'
 }
 ```
 
-* `address` is the address of the memory chunk in the executable's memory space where the rule matched
-* `pid` is the process ID of the process that contained the matching chunk
-* `executable` is its name
-* `matches` is a dict for every matching string from the YARA rule. Its value is a tuple of offsets in that memory chunk where the rule matched
-
-And the 2nd argument to `on_match()` is `data`, which is the memory chunk itself.
-
-With this data, extractor.py can easily decode the configuration as it has the memory chunk, and every location where the blob 0xAA 0xBB 0xCC 0xDD was found.
-
-## Full example
-
-We have a YARA file to locate the configuration:
-
-```YARA
-rule malware_config_matcher
-{
-    meta:
-        plugin = "extractor"
-    strings:
-        $config_start = { AA BB CC DD }
-    condition:
-        all of them
-}
-```
-
-and a script to decrypt it:
-
-```Python
-# extractor.py
-
-def on_match(info,data):
-    if not "$config_start" in info["matches"]:
-        # should not happen here because it's the only string
-	# but if more strings are in the rule, it may not have produced
-	# a match
-        return
-        
-    for offset in info["matches"]["$config_start"]:
-        #Assuming some fixed size
-        config = data[offset:(offset+CONFIG_SIZE)]
-        
-        #And some function to decrypt that config
-        plain = config_decrypt(config)
-        
-        print("Found config in %s, decrypted config = %s" % (info["executable"],plain))
-```
+* `address` is the address of the memory chunk in the scanned process
+* `matches` contains a list of offsets for every matched YARA identifier
+* `pid` is the process ID
+* `executable` is the process' name
