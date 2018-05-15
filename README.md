@@ -16,7 +16,7 @@ rule pi_config
     meta:
         plugin = "pi_config_extract"
     strings:
-        $config_start = "\x08\x00StubPath"
+        $config_start = "\\x08\\x00StubPath"
     condition:
         all of them
 }
