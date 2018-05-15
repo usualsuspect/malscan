@@ -9,9 +9,14 @@ python_plugin::python_plugin(const std::string& name) : name_(name), module_(nul
     Py_DECREF(plug_name);
 
     if (!module_)
-        throw std::runtime_error("Failed to load Python plugin " + name_);
+    {
+        PyErr_Print();
+        throw std::runtime_error("Failed to load Python plugin " + name_ + ", aborting.");
+    }
 
     match_func_ = PyObject_GetAttrString(module_, "on_match");
+    if (!match_func_)
+        std::cerr << "Warning: Plugin '" << name_ << "' contains no function 'on_match()'" << std::endl;
 }
 
 python_plugin& python_plugin::operator=(python_plugin&& other)
@@ -41,7 +46,6 @@ void python_plugin::on_match(const match_info& mi)
 {
     if (match_func_ && PyCallable_Check(match_func_))
     {
-        std::cerr << "Calling script" << std::endl;
         auto args = make_args(mi);
         PyObject_CallObject(match_func_, args);
         Py_DECREF(args);

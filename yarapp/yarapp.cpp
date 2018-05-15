@@ -1,5 +1,4 @@
 #include <yarapp.h>
-#include <iostream>
 
 yarapp::yarapp() : compiler_(nullptr), rules_(nullptr)
 {
@@ -31,12 +30,6 @@ void yarapp::finalize()
     if (rules_)
         throw std::runtime_error("Rules already finalized");
     yr_compiler_get_rules(compiler_, &rules_);
-}
-
-void dump_rule(YR_RULE *rule)
-{
-    std::cout << "Dumping rule..." << std::endl;
-    std::cout << "Rule: " << rule->identifier << std::endl;
 }
 
 /* FORGIVE ME FOR I HAVE SINNED*/

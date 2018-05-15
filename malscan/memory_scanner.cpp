@@ -1,7 +1,13 @@
 #include <memory_scanner.h>
 #include <utils.h>
 #include <functional>
-#include <iostream>
+
+//Ignore the following, just for reference
+//Py_Initialize();
+//Super weird: If we use "test" instead of plugin, the module will load, but "callme" won't be found when
+//running on Windows XP.
+//Solution from: https://stackoverflow.com/questions/24313681/pyobject-getattrstring-c-function-returning-null-unable-to-call-python-functi
+//wtf.
 
 memory_scanner::memory_scanner()
 {
@@ -30,7 +36,6 @@ void memory_scanner::add_rule_file(const std::string & file_name)
 
 void memory_scanner::load_plugin(const std::string & name)
 {
-    std::cerr << "Loading plugin " << name << std::endl;
     plugins_.emplace_back(python_plugin(name));
 }
 
@@ -108,7 +113,7 @@ int memory_scanner::scan_callback(int message, void *msg_data, void *user_data)
 
             for (auto& plug_name : plugin_list)
             {
-                auto it = std::find(plugins_.begin(), plugins_.end(), plug_name);
+                auto it = std::find(plugins_.begin(), plugins_.end(), "plugins."+plug_name);
                 if (it != plugins_.end())
                     it->on_match(mi);
             }
